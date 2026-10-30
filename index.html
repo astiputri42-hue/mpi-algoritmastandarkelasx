@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modul Interaktif: Algoritma & Pemrosesan Data</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { 
+                        primary: '#4f46e5',   // Indigo
+                        secondary: '#0ea5e9', // Sky
+                        accent: '#f59e0b',    // Amber
+                        darkbg: '#0f172a',    // Slate 900
+                        darkcard: '#1e293b'   // Slate 800
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body { transition: background-color 0.3s ease, color 0.3s ease; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Accordion */
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .accordion-item.active .accordion-content { max-height: 1000px; }
+        .accordion-item.active .acc-icon { transform: rotate(180deg); }
+
+        /* Hide scrollbar for nav */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Custom Scrollbar for Logs */
+        .log-scroll::-webkit-scrollbar { width: 6px; }
+        .log-scroll::-webkit-scrollbar-track { background: #1e293b; }
+        .log-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+        /* Simulation Specific */
+        .bar-container { display: flex; align-items: flex-end; justify-content: center; gap: 8px; height: 200px; padding: 20px; }
+        .data-bar { 
+            width: 40px; 
+            background-color: #4f46e5; 
+            border-radius: 4px 4px 0 0; 
+            display: flex; 
+            align-items: flex-start; 
+            justify-content: center; 
+            padding-top: 8px; 
+            color: white; 
+            font-weight: bold; 
+            transition: height 0.3s ease, background-color 0.3s ease, transform 0.3s ease;
+        }
+        .data-bar.comparing { background-color: #f59e0b; transform: scale(1.05); } /* Amber */
+        .data-bar.swapping { background-color: #ef4444; } /* Red */
+        .data-bar.sorted { background-color: #10b981; } /* Emerald */
+    </style>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-darkbg dark:text-slate-100 h-screen flex flex-col md:flex-row overflow-hidden font-sans">
+
+    <!-- Sidebar (Desktop) -->
+    <aside class="w-full md:w-72 bg-white dark:bg-darkcard border-r border-slate-200 dark:border-slate-700 flex flex-col z-20 shrink-0 hidden md:flex shadow-lg shadow-slate-200/50 dark:shadow-none">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-start">
+            <div>
+                <h1 class="text-xl font-bold text-primary dark:text-indigo-400 leading-tight">Informatika X</h1>
+                <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">Fase E - Modul Interaktif</p>
+            </div>
+            <button id="themeToggle" class="p-2 bg-slate-100 dark:bg-slate-700 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition" aria-label="Toggle Dark Mode">
+                <i data-lucide="moon" class="w-5 h-5 dark:hidden block text-slate-700"></i>
+                <i data-lucide="sun" class="w-5 h-5 hidden dark:block text-yellow-400"></i>
+            </button>
+        </div>
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1.5" id="nav-container">
+            <!-- Nav buttons generated via JS -->
+        </nav>
+        <div class="p-5 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+            <div class="text-[10px] text-slate-500 mb-1 font-semibold uppercase tracking-wide">Pengembang Modul</div>
+            <div class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">Asti Riani Putri, S.St, M.T</div>
+            
+            <div class="flex justify-between items-center mb-1">
+                <div class="text-[10px] text-slate-500 font-medium">Status LMS SCORM:</div>
+                <div id="scorm-status" class="text-[10px] font-bold text-yellow-500 bg-yellow-100 dark:bg-yellow-900/40 px-2 py-0.5 rounded">Memuat...</div>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-1.5 dark:bg-slate-700 mt-2">
+                <div id="progress-bar" class="bg-primary h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Mobile Header -->
+    <div class="md:hidden bg-white dark:bg-darkcard p-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-700 z-20 shadow-sm">
+        <div>
+            <h1 class="text-lg font-bold text-primary dark:text-indigo-400">Informatika X</h1>
+            <p class="text-[10px] text-slate-500 font-medium">Oleh: Asti Riani Putri, S.St, M.T</p>
+        </div>
+        <button id="themeToggleMobile" class="p-2 bg-slate-100 dark:bg-slate-700 rounded-full">
+            <i data-lucide="moon" class="w-5 h-5 dark:hidden block text-slate-700"></i>
+            <i data-lucide="sun" class="w-5 h-5 hidden dark:block text-yellow-400"></i>
+        </button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 relative overflow-y-auto pb-24 md:pb-0 z-10 scroll-smooth">
+        <div class="max-w-4xl mx-auto p-5 md:p-10">
+            
+            <!-- TAB 1: Dashboard -->
+            <section id="tab-1" class="tab-content active">
+                <div class="bg-white dark:bg-darkcard rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-bold mb-4">
+                        <i data-lucide="info" class="w-4 h-4"></i> Modul Siap Digunakan
+                    </div>
+                    <h2 class="text-3xl font-extrabold mb-2 text-slate-800 dark:text-white">Halo, <span id="student-name" class="text-primary">Siswa/i</span>! 👋</h2>
+                    <p class="text-slate-600 dark:text-slate-400 mb-8 font-medium">Materi: Berfikir Komputasional, Algoritma Standar & Pemrosesan Data</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-slate-800/80 p-6 rounded-xl border border-indigo-100 dark:border-slate-600">
+                            <h3 class="font-bold mb-3 flex items-center gap-2 text-indigo-900 dark:text-indigo-300"><i data-lucide="target" class="w-5 h-5 text-primary"></i> Capaian Kompetensi</h3>
+                            <ul class="list-disc list-inside text-sm space-y-2 text-slate-700 dark:text-slate-300">
+                                <li>Mampu menerapkan strategi algoritmik standar.</li>
+                                <li>Memahami proses <em>Searching</em> (Pencarian).</li>
+                                <li>Memahami proses <em>Sorting</em> (Pengurutan data).</li>
+                                <li>Mengerti siklus pemrosesan dan struktur data.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-slate-800 dark:to-slate-800/80 p-6 rounded-xl border border-emerald-100 dark:border-slate-600">
+                            <h3 class="font-bold mb-3 flex items-center gap-2 text-emerald-900 dark:text-emerald-300"><i data-lucide="list-checks" class="w-5 h-5 text-emerald-600"></i> Prasyarat</h3>
+                            <ul class="list-disc list-inside text-sm space-y-2 text-slate-700 dark:text-slate-300">
+                                <li>Pemahaman dasar logika matematika.</li>
+                                <li>Konsep dasar tipe data (angka, teks).</li>
+                                <li>Kemampuan analisis masalah.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <button onclick="switchTab(2)" class="w-full md:w-auto bg-primary hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5">
+                        Mulai Pelajari Modul <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- TAB 2: Modul Materi -->
+            <section id="tab-2" class="tab-content">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-3"><span class="bg-primary/10 text-primary p-2 rounded-lg"><i data-lucide="book-open"></i></span> Modul Materi & Konsep</h2>
+                
+                <div class="bg-white dark:bg-darkcard p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-700 mb-8 shadow-sm">
+                    <p class="mb-6 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                        <strong>Berfikir Komputasional (CT)</strong> membantu kita menstrukturkan penyelesaian masalah. Dalam praktiknya, kita sering menggunakan <strong>Algoritma Standar</strong> untuk memproses data yang berjumlah besar (<strong>Pemrosesan Data</strong>) agar lebih efisien.
+                    </p>
+                    
+                    <div class="space-y-4">
+                        <!-- Accordion 1: Searching -->
+                        <div class="accordion-item bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all">
+                            <button class="w-full p-5 text-left font-bold flex justify-between items-center focus:outline-none" onclick="toggleAccordion(this)">
+                                <span class="flex items-center gap-3"><span class="bg-secondary text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm"><i data-lucide="search" class="w-4 h-4"></i></span> Algoritma Pencarian (Searching)</span>
+                                <i data-lucide="chevron-down" class="acc-icon transition-transform w-5 h-5 text-slate-400"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-5 border-t border-slate-200 dark:border-slate-700 text-sm bg-white dark:bg-darkcard">
+                                    <p class="mb-3">Pencarian adalah proses menemukan letak suatu data dalam sekumpulan data.</p>
+                                    <ul class="space-y-3 list-disc pl-5">
+                                        <li><strong>Linear Search (Pencarian Sekuensial):</strong> Memeriksa setiap elemen data satu per satu dari awal hingga akhir. Cocok untuk data yang belum terurut.</li>
+                                        <li><strong>Binary Search (Pencarian Biner):</strong> Mencari pada data yang <em>sudah terurut</em> dengan cara membagi ruang pencarian menjadi dua secara terus menerus. Sangat cepat untuk data besar!</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Accordion 2: Sorting -->
+                        <div class="accordion-item bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all">
+                            <button class="w-full p-5 text-left font-bold flex justify-between items-center focus:outline-none" onclick="toggleAccordion(this)">
+                                <span class="flex items-center gap-3"><span class="bg-accent text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm"><i data-lucide="arrow-up-down" class="w-4 h-4"></i></span> Algoritma Pengurutan (Sorting)</span>
+                                <i data-lucide="chevron-down" class="acc-icon transition-transform w-5 h-5 text-slate-400"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-5 border-t border-slate-200 dark:border-slate-700 text-sm bg-white dark:bg-darkcard">
+                                    <p class="mb-3">Pengurutan adalah proses mengatur sekumpulan data menurut aturan tertentu (Menaik/Ascending atau Menurun/Descending).</p>
+                                    <ul class="space-y-3 list-disc pl-5">
+                                        <li><strong>Bubble Sort:</strong> Menukar posisi dua data yang berdekatan berulang kali jika urutannya salah, hingga posisi data terbesar "menggelembung" ke ujung.</li>
+                                        <li><strong>Insertion Sort:</strong> Mengambil elemen satu per satu dan "menyisipkannya" ke posisi yang tepat pada bagian data yang sudah terurut sebelumnya.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Accordion 3: Data Processing -->
+                        <div class="accordion-item bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all">
+                            <button class="w-full p-5 text-left font-bold flex justify-between items-center focus:outline-none" onclick="toggleAccordion(this)">
+                                <span class="flex items-center gap-3"><span class="bg-emerald-500 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm"><i data-lucide="database" class="w-4 h-4"></i></span> Pemrosesan Data</span>
+                                <i data-lucide="chevron-down" class="acc-icon transition-transform w-5 h-5 text-slate-400"></i>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="p-5 border-t border-slate-200 dark:border-slate-700 text-sm bg-white dark:bg-darkcard">
+                                    <p class="mb-2">Siklus dasar pemrosesan data oleh komputer:</p>
+                                    <div class="flex items-center justify-center gap-2 my-4 bg-slate-100 dark:bg-slate-800 p-3 rounded-lg text-center font-bold text-xs md:text-sm">
+                                        <div class="bg-white dark:bg-slate-700 px-3 py-2 rounded shadow-sm">INPUT</div>
+                                        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-400"></i>
+                                        <div class="bg-white dark:bg-slate-700 px-3 py-2 rounded shadow-sm text-primary">PROCESS</div>
+                                        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-400"></i>
+                                        <div class="bg-white dark:bg-slate-700 px-3 py-2 rounded shadow-sm text-emerald-600">OUTPUT</div>
+                                    </div>
+                                    <p>Data mentah dikumpulkan (Input), diproses menggunakan algoritma (Process), lalu disajikan menjadi informasi yang bermakna (Output).</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-lg mt-8 mb-4">Glosarium Interaktif</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="group relative bg-white dark:bg-darkcard p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary hover:shadow-lg transition cursor-pointer text-center h-28 flex flex-col justify-center overflow-hidden">
+                        <div class="font-bold text-slate-800 dark:text-slate-200 group-hover:-translate-y-8 transition-transform duration-300">Ascending</div>
+                        <div class="absolute inset-x-0 bottom-0 p-4 text-[11px] text-primary translate-y-full group-hover:-translate-y-1 transition-transform duration-300 font-medium">Pengurutan dari nilai kecil ke nilai besar (Menaik).</div>
+                    </div>
+                    <div class="group relative bg-white dark:bg-darkcard p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-secondary hover:shadow-lg transition cursor-pointer text-center h-28 flex flex-col justify-center overflow-hidden">
+                        <div class="font-bold text-slate-800 dark:text-slate-200 group-hover:-translate-y-8 transition-transform duration-300">Descending</div>
+                        <div class="absolute inset-x-0 bottom-0 p-4 text-[11px] text-secondary translate-y-full group-hover:-translate-y-1 transition-transform duration-300 font-medium">Pengurutan dari nilai besar ke nilai kecil (Menurun).</div>
+                    </div>
+                    <div class="group relative bg-white dark:bg-darkcard p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-accent hover:shadow-lg transition cursor-pointer text-center h-28 flex flex-col justify-center overflow-hidden">
+                        <div class="font-bold text-slate-800 dark:text-slate-200 group-hover:-translate-y-8 transition-transform duration-300">Array</div>
+                        <div class="absolute inset-x-0 bottom-0 p-4 text-[11px] text-accent translate-y-full group-hover:-translate-y-1 transition-transform duration-300 font-medium">Struktur data untuk menyimpan sekumpulan elemen sejenis.</div>
+                    </div>
+                    <div class="group relative bg-white dark:bg-darkcard p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:shadow-lg transition cursor-pointer text-center h-28 flex flex-col justify-center overflow-hidden">
+                        <div class="font-bold text-slate-800 dark:text-slate-200 group-hover:-translate-y-8 transition-transform duration-300">Efisiensi</div>
+                        <div class="absolute inset-x-0 bottom-0 p-4 text-[11px] text-emerald-500 translate-y-full group-hover:-translate-y-1 transition-transform duration-300 font-medium">Kecepatan algoritma menyelesaikan tugas dengan hemat sumber daya.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: Studi Kasus -->
+            <section id="tab-3" class="tab-content">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-3"><span class="bg-primary/10 text-primary p-2 rounded-lg"><i data-lucide="compass"></i></span> Studi Kasus & Eksplorasi</h2>
+                
+                <div class="bg-white dark:bg-darkcard p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-700 mb-6 shadow-sm relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10"></div>
+                    
+                    <h3 class="text-xl font-bold mb-3 text-primary flex items-center gap-2"><i data-lucide="book" class="w-5 h-5"></i> Insiden di Perpustakaan</h3>
+                    <p class="text-sm mb-6 text-slate-600 dark:text-slate-400">
+                        Sekolah Anda memiliki <strong>10.000 buku</strong> di perpustakaan. Seseorang mengacak seluruh letak buku tersebut! Hari ini, ada seorang siswa yang sangat butuh buku berjudul "Ensiklopedia Antariksa". Anda ditugaskan membantu mencari buku tersebut.
+                    </p>
+                    
+                    <div class="space-y-6" id="case-study-steps">
+                        <!-- Step 1 -->
+                        <div class="p-5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold px-3 py-1.5 rounded-md">Keputusan 1</span>
+                                <p class="text-sm font-semibold">Tindakan apa yang paling logis dilakukan PERTAMA KALI agar pencarian efisien (cepat)?</p>
+                            </div>
+                            <div class="flex flex-col gap-3">
+                                <button onclick="answerCase(1, false, this)" class="text-left px-5 py-4 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm hover:border-primary hover:shadow-md transition group">
+                                    <span class="font-bold text-slate-400 group-hover:text-primary transition mr-2">A.</span> Langsung mencari buku satu per satu dari rak paling depan (Linear Search).
+                                </button>
+                                <button onclick="answerCase(1, true, this)" class="text-left px-5 py-4 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm hover:border-primary hover:shadow-md transition group">
+                                    <span class="font-bold text-slate-400 group-hover:text-primary transition mr-2">B.</span> Mengurutkan (Sorting) buku-buku tersebut berdasarkan abjad judulnya terlebih dahulu.
+                                </button>
+                            </div>
+                            <div id="feedback-1" class="text-sm mt-4 hidden p-4 rounded-lg border"></div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div id="step-2" class="p-5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 hidden opacity-0 transition-opacity duration-500">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold px-3 py-1.5 rounded-md">Keputusan 2</span>
+                                <p class="text-sm font-semibold">Buku kini telah terurut A-Z. Strategi apa yang Anda gunakan (Binary Search) untuk menemukan "Ensiklopedia Antariksa" (huruf E)?</p>
+                            </div>
+                            <div class="flex flex-col gap-3">
+                                <button onclick="answerCase(2, true, this)" class="text-left px-5 py-4 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm hover:border-emerald-500 hover:shadow-md transition group">
+                                    <span class="font-bold text-slate-400 group-hover:text-emerald-500 transition mr-2">A.</span> Buka tepat di tengah rak (Misal huruf M). Karena E sebelum M, abaikan setengah rak kanan, dan cari di sisa setengah kiri. Ulangi.
+                                </button>
+                                <button onclick="answerCase(2, false, this)" class="text-left px-5 py-4 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm hover:border-emerald-500 hover:shadow-md transition group">
+                                    <span class="font-bold text-slate-400 group-hover:text-emerald-500 transition mr-2">B.</span> Cari acak dengan menebak letak buku tersebut secara acak sampai ketemu.
+                                </button>
+                            </div>
+                            <div id="feedback-2" class="text-sm mt-4 hidden p-4 rounded-lg border"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: Simulasi (Laboratorium) -->
+            <section id="tab-4" class="tab-content">
+                <h2 class="text-2xl font-bold mb-2 flex items-center gap-3"><span class="bg-primary/10 text-primary p-2 rounded-lg"><i data-lucide="flask-conical"></i></span> Lab Data: Simulasi Bubble Sort</h2>
+                <p class="text-sm text-slate-500 mb-6">Visualisasi bagaimana Algoritma standar menata (memproses) sekumpulan data tak beraturan.</p>
+
+                <div class="bg-white dark:bg-darkcard p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div class="flex flex-col md:flex-row gap-6">
+                        
+                        <!-- Visualizer Canvas Area -->
+                        <div class="w-full md:w-3/5 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-600 overflow-hidden relative">
+                            <!-- Bars -->
+                            <div class="bar-container w-full" id="sort-container">
+                                <!-- Generated by JS -->
+                            </div>
+                            
+                            <!-- State Badges -->
+                            <div class="absolute top-3 left-3 flex gap-2">
+                                <span class="bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-1 rounded">Data Belum Urut</span>
+                                <span class="bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-2 py-1 rounded">Membandingkan</span>
+                                <span class="bg-red-500/20 text-red-700 dark:text-red-300 text-[10px] font-bold px-2 py-1 rounded">Menukar Posisi</span>
+                            </div>
+                        </div>
+
+                        <!-- Controls & Log -->
+                        <div class="w-full md:w-2/5 flex flex-col">
+                            <h3 class="font-bold text-sm mb-3">Panel Kontrol Data:</h3>
+                            
+                            <div class="grid grid-cols-2 gap-2 mb-4">
+                                <button onclick="generateDataArray()" class="col-span-2 px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2">
+                                    <i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Acak Data Mentah
+                                </button>
+                                <button id="btn-step" onclick="stepSort()" class="px-3 py-3 bg-secondary hover:bg-sky-600 text-white rounded-lg text-xs font-bold transition shadow-md flex items-center justify-center gap-2">
+                                    <i data-lucide="footprints" class="w-4 h-4"></i> Proses (Step)
+                                </button>
+                                <button id="btn-play" onclick="playAutoSort()" class="px-3 py-3 bg-primary hover:bg-indigo-600 text-white rounded-lg text-xs font-bold transition shadow-md shadow-indigo-500/30 flex items-center justify-center gap-2">
+                                    <i data-lucide="play" class="w-4 h-4"></i> Auto Jalankan
+                                </button>
+                            </div>
+                            
+                            <!-- Log System -->
+                            <div class="flex-1 bg-black text-green-400 font-mono text-[11px] rounded-lg p-3 min-h-[140px] max-h-[200px] overflow-y-auto log-scroll border border-slate-700 flex flex-col" id="sort-log">
+                                <div class="text-slate-400 mb-1 border-b border-slate-800 pb-1">> SERVER_LOG: MENGUNGGAH MODUL</div>
+                                > Sistem Data Siap. Klik Acak Data atau Jalankan algoritma.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: Latihan Formatif (Mini Game) -->
+            <section id="tab-5" class="tab-content">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-3"><span class="bg-primary/10 text-primary p-2 rounded-lg"><i data-lucide="gamepad-2"></i></span> Latihan Formatif</h2>
+                <div class="bg-white dark:bg-darkcard p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <p class="text-sm mb-6 text-slate-600 dark:text-slate-400">Hubungkan istilah algoritma (kolom kiri) dengan fungsinya yang tepat (kolom kanan). Klik salah satu di kiri, lalu pasangannya di kanan.</p>
+                    
+                    <div class="flex flex-col md:flex-row gap-6 relative">
+                        <!-- Connecting Line Canvas (Optional for future, conceptually just state highlights now) -->
+                        
+                        <!-- Left -->
+                        <div class="space-y-3 w-full md:w-1/2" id="match-left">
+                            <button class="match-btn flex items-center justify-between w-full p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-300 dark:border-slate-600 rounded-xl text-left text-sm font-bold hover:border-primary transition" data-id="L1">1. Binary Search <div class="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600 dot-indicator"></div></button>
+                            <button class="match-btn flex items-center justify-between w-full p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-300 dark:border-slate-600 rounded-xl text-left text-sm font-bold hover:border-primary transition" data-id="L2">2. Bubble Sort <div class="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600 dot-indicator"></div></button>
+                            <button class="match-btn flex items-center justify-between w-full p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-300 dark:border-slate-600 rounded-xl text-left text-sm font-bold hover:border-primary transition" data-id="L3">3. Linear Search <div class="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600 dot-indicator"></div></button>
+                        </div>
+                        <!-- Right -->
+                        <div class="space-y-3 w-full md:w-1/2" id="match-right">
+                            <button class="match-btn flex items-center justify-between w-full p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-300 dark:border-slate-600 rounded-xl text-left text-sm hover:border-secondary transition" data-id="R3"><div class="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600 dot-indicator"></div> A. Memeriksa data dari awal sampai akhir satu-per-satu.</button>
+                            <button class="match-btn flex items-center justify-between w-full p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-300 dark:border-slate-600 rounded-xl text-left text-sm hover:border-secondary transition" data-id="R1"><div class="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600 dot-indicator"></div> B. Membagi data terurut jadi dua bagian untuk mencari letak data.</button>
+                            <button class="match-btn flex items-center justify-between w-full p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-300 dark:border-slate-600 rounded-xl text-left text-sm hover:border-secondary transition" data-id="R2"><div class="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600 dot-indicator"></div> C. Menukar data yang berdekatan berulang kali hingga terurut.</button>
+                        </div>
+                    </div>
+                    <div id="match-feedback" class="mt-8 p-4 text-center text-sm font-bold rounded-xl hidden animate-pulse"></div>
+                    <div class="mt-4 text-center">
+                        <button onclick="resetMatchGame()" class="text-sm text-slate-500 hover:text-primary transition font-medium"><i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i> Ulangi Game</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: Evaluasi Akhir (SCORM) -->
+            <section id="tab-6" class="tab-content">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-3"><span class="bg-primary/10 text-primary p-2 rounded-lg"><i data-lucide="clipboard-check"></i></span> Asesmen / Evaluasi Akhir</h2>
+                <div class="bg-white dark:bg-darkcard p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 p-4 rounded-xl mb-6 text-sm text-amber-800 dark:text-amber-200 flex gap-3">
+                        <i data-lucide="alert-circle" class="w-5 h-5 shrink-0 mt-0.5"></i>
+                        <div>
+                            <strong>Perhatian:</strong> Nilai dari kuis ini akan disinkronkan ke LMS (SCORM). Kerjakan dengan teliti. Nilai Kelulusan Minimum (KKM) adalah <strong>75</strong>.
+                        </div>
+                    </div>
+
+                    <form id="quizForm" onsubmit="submitQuiz(event)">
+                        <!-- Q1 -->
+                        <div class="mb-8">
+                            <p class="font-bold text-sm mb-4">1. Apa syarat utama agar algoritma Binary Search dapat digunakan pada sebuah sekumpulan data?</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q1" value="A" required class="w-4 h-4 text-primary focus:ring-primary"> Data harus berupa teks saja.
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q1" value="B" class="w-4 h-4 text-primary focus:ring-primary"> Data harus sudah dalam keadaan terurut (Sorted).
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q1" value="C" class="w-4 h-4 text-primary focus:ring-primary"> Data harus berjumlah genap.
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Q2 -->
+                        <div class="mb-8">
+                            <p class="font-bold text-sm mb-4">2. Jika Anda memiliki 100 kartu acak dan mencari nilai tertentu dengan memeriksa dari kartu pertama hingga ketemu, algoritma apa ini?</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q2" value="A" required class="w-4 h-4 text-primary focus:ring-primary"> Bubble Sort
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q2" value="B" class="w-4 h-4 text-primary focus:ring-primary"> Binary Search
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q2" value="C" class="w-4 h-4 text-primary focus:ring-primary"> Linear Search
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Q3 -->
+                        <div class="mb-8">
+                            <p class="font-bold text-sm mb-4">3. Algoritma pengurutan yang bekerja dengan menukar (swap) elemen yang berdekatan jika posisinya salah dinamakan...</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q3" value="A" required class="w-4 h-4 text-primary focus:ring-primary"> Bubble Sort
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q3" value="B" class="w-4 h-4 text-primary focus:ring-primary"> Insertion Sort
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q3" value="C" class="w-4 h-4 text-primary focus:ring-primary"> Linear Search
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Q4 -->
+                        <div class="mb-8">
+                            <p class="font-bold text-sm mb-4">4. Dalam siklus pemrosesan data, tahapan mengolah data mentah menjadi bentuk informasi berguna disebut tahapan...</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q4" value="A" required class="w-4 h-4 text-primary focus:ring-primary"> Input
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q4" value="B" class="w-4 h-4 text-primary focus:ring-primary"> Process
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q4" value="C" class="w-4 h-4 text-primary focus:ring-primary"> Output
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Q5 -->
+                        <div class="mb-8">
+                            <p class="font-bold text-sm mb-4">5. Mengurutkan data dari nilai yang paling besar ke nilai yang paling kecil disebut pengurutan secara...</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q5" value="A" required class="w-4 h-4 text-primary focus:ring-primary"> Descending
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q5" value="B" class="w-4 h-4 text-primary focus:ring-primary"> Ascending
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q5" value="C" class="w-4 h-4 text-primary focus:ring-primary"> Randomizing
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Q6 -->
+                        <div class="mb-8">
+                            <p class="font-bold text-sm mb-4">6. Ketika Anda mencari arti kata di dalam Kamus Bahasa Indonesia, logika pencarian mana yang secara alami Anda terapkan?</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q6" value="A" required class="w-4 h-4 text-primary focus:ring-primary"> Linear Search (Membaca tiap kata dari halaman 1)
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q6" value="B" class="w-4 h-4 text-primary focus:ring-primary"> Binary Search (Membuka bagian tengah kamus lalu mempersempit)
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q6" value="C" class="w-4 h-4 text-primary focus:ring-primary"> Bubble Sort
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Q7 -->
+                        <div class="mb-8">
+                            <p class="font-bold text-sm mb-4">7. Struktur data dasar yang berfungsi menyimpan sekumpulan elemen sejenis pada memori yang berurutan adalah...</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q7" value="A" required class="w-4 h-4 text-primary focus:ring-primary"> Array
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q7" value="B" class="w-4 h-4 text-primary focus:ring-primary"> Integer
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q7" value="C" class="w-4 h-4 text-primary focus:ring-primary"> Output
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Q8 -->
+                        <div class="mb-8">
+                            <p class="font-bold text-sm mb-4">8. Tujuan utama dari menerapkan proses Berfikir Komputasional (Computational Thinking) adalah...</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q8" value="A" required class="w-4 h-4 text-primary focus:ring-primary"> Membuat komputer berjalan lebih cepat
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q8" value="B" class="w-4 h-4 text-primary focus:ring-primary"> Memecahkan masalah secara terstruktur, efisien, dan logis
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q8" value="C" class="w-4 h-4 text-primary focus:ring-primary"> Menghafal kode-kode bahasa pemrograman
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Q9 -->
+                        <div class="mb-8">
+                            <p class="font-bold text-sm mb-4">9. Jika ada urutan angka: [5, 2, 8]. Apa hasil list setelah HANYA SATU kali langkah penukaran algoritma Bubble Sort pertama?</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q9" value="A" required class="w-4 h-4 text-primary focus:ring-primary"> [2, 5, 8]
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q9" value="B" class="w-4 h-4 text-primary focus:ring-primary"> [8, 5, 2]
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q9" value="C" class="w-4 h-4 text-primary focus:ring-primary"> [5, 8, 2]
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Q10 -->
+                        <div class="mb-8">
+                            <p class="font-bold text-sm mb-4">10. Setelah tahapan "Process" (Pemrosesan) dalam siklus data selesai, apa tahapan krusial selanjutnya?</p>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q10" value="A" required class="w-4 h-4 text-primary focus:ring-primary"> Input
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q10" value="B" class="w-4 h-4 text-primary focus:ring-primary"> Storage (Penyimpanan Sementara)
+                                </label>
+                                <label class="flex items-center gap-3 text-sm p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-700 transition">
+                                    <input type="radio" name="q10" value="C" class="w-4 h-4 text-primary focus:ring-primary"> Output (Menghasilkan Informasi)
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btnSubmitQuiz" class="bg-primary hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-bold transition-all w-full shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2">
+                            Kirim Jawaban ke LMS <i data-lucide="send" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+
+                    <div id="quizResult" class="mt-8 hidden p-6 rounded-xl text-center font-bold text-lg border"></div>
+                </div>
+            </section>
+
+            <!-- TAB 7: Refleksi -->
+            <section id="tab-7" class="tab-content">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-3"><span class="bg-primary/10 text-primary p-2 rounded-lg"><i data-lucide="book-heart"></i></span> Catatan & Refleksi</h2>
+                <div class="bg-white dark:bg-darkcard p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <p class="text-sm mb-4 text-slate-600 dark:text-slate-400">Ringkas pemahaman Anda. Catatan ini tersimpan secara lokal (hanya di perangkat Anda).</p>
+                    
+                    <textarea id="student-notes" class="w-full h-40 p-4 border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-900 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary mb-6 text-sm resize-none" placeholder="Tulis catatan di sini... Contoh: Saya paham bahwa Binary search jauh lebih cepat dari Linear search untuk data yang besar dan terurut."></textarea>
+                    
+                    <h3 class="font-bold text-sm mb-4">Checklist Refleksi Mandiri:</h3>
+                    <div class="space-y-4 mb-8">
+                        <label class="flex items-start gap-3 text-sm cursor-pointer p-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition">
+                            <input type="checkbox" id="ref1" class="mt-1 w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"> 
+                            Saya dapat membedakan penggunaan Linear Search dan Binary Search.
+                        </label>
+                        <label class="flex items-start gap-3 text-sm cursor-pointer p-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition">
+                            <input type="checkbox" id="ref2" class="mt-1 w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"> 
+                            Saya memahami konsep pertukaran data (Swap) pada algoritma Bubble Sort.
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 border-t border-slate-200 dark:border-slate-700 pt-6">
+                        <button onclick="saveNotes()" class="bg-slate-800 dark:bg-slate-200 hover:bg-slate-900 dark:hover:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-xl font-bold transition flex items-center gap-2 shadow-md">
+                            <i data-lucide="save" class="w-4 h-4"></i> Simpan Catatan Lokal
+                        </button>
+                        <span id="save-msg" class="text-sm text-emerald-600 dark:text-emerald-400 font-bold hidden transition-opacity flex items-center gap-1"><i data-lucide="check-circle-2" class="w-4 h-4"></i> Disimpan!</span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Mobile Bottom Navigation (Sticky) -->
+    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 dark:bg-darkcard/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 flex justify-between px-2 pb-safe pt-2 z-30 overflow-x-auto no-scrollbar shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" id="mobile-nav-container">
+        <!-- Buttons injected by JS -->
+    </nav>
+
+    <script>
+        // ==========================================
+        // 1. NAVIGASI TAB & UI UTAMA
+        // ==========================================
+        const tabs = [
+            { id: 1, title: 'Dashboard', icon: 'home' },
+            { id: 2, title: 'Materi', icon: 'book-open' },
+            { id: 3, title: 'Studi Kasus', icon: 'compass' },
+            { id: 4, title: 'Simulasi Lab', icon: 'flask-conical' },
+            { id: 5, title: 'Latihan', icon: 'gamepad-2' },
+            { id: 6, title: 'Evaluasi', icon: 'clipboard-check' },
+            { id: 7, title: 'Refleksi', icon: 'book-heart' }
+        ];
+
+        function initNav() {
+            const deskNav = document.getElementById('nav-container');
+            const mobNav = document.getElementById('mobile-nav-container');
+            
+            tabs.forEach(tab => {
+                // Desktop
+                const btnDesk = document.createElement('button');
+                btnDesk.className = `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all font-semibold ${tab.id === 1 ? 'bg-primary text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`;
+                btnDesk.id = `nav-desk-${tab.id}`;
+                btnDesk.onclick = () => switchTab(tab.id);
+                btnDesk.innerHTML = `<i data-lucide="${tab.icon}" class="w-5 h-5"></i> <span>${tab.title}</span>`;
+                deskNav.appendChild(btnDesk);
+
+                // Mobile
+                const btnMob = document.createElement('button');
+                btnMob.className = `flex flex-col items-center justify-center min-w-[72px] p-2 pb-3 transition-colors ${tab.id === 1 ? 'text-primary' : 'text-slate-500'}`;
+                btnMob.id = `nav-mob-${tab.id}`;
+                btnMob.onclick = () => switchTab(tab.id);
+                btnMob.innerHTML = `<i data-lucide="${tab.icon}" class="w-6 h-6 mb-1 ${tab.id === 1 ? 'fill-primary/20' : ''}"></i> <span class="text-[10px] font-semibold whitespace-nowrap">${tab.title}</span>`;
+                mobNav.appendChild(btnMob);
+            });
+            lucide.createIcons();
+        }
+
+        let maxTabReached = 1;
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${id}`).classList.add('active');
+            
+            tabs.forEach(t => {
+                const btnDesk = document.getElementById(`nav-desk-${t.id}`);
+                const btnMob = document.getElementById(`nav-mob-${t.id}`);
+                const iconMob = btnMob.querySelector('i');
+                
+                if(t.id === id) {
+                    btnDesk.className = 'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all font-semibold bg-primary text-white shadow-md shadow-indigo-500/20';
+                    btnMob.className = 'flex flex-col items-center justify-center min-w-[72px] p-2 pb-3 transition-colors text-primary';
+                    iconMob.classList.add('fill-primary/20');
+                } else {
+                    btnDesk.className = 'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800';
+                    btnMob.className = 'flex flex-col items-center justify-center min-w-[72px] p-2 pb-3 transition-colors text-slate-500';
+                    iconMob.classList.remove('fill-primary/20');
+                }
+            });
+
+            if (id > maxTabReached) maxTabReached = id;
+            document.getElementById('progress-bar').style.width = `${(maxTabReached / 7) * 100}%`;
+            
+            document.querySelector('main').scrollTo({top:0, behavior:'smooth'});
+        }
+
+        // ==========================================
+        // 2. TEMA (DARK MODE) & ACCORDION
+        // ==========================================
+        function toggleTheme() {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            localStorage.setItem('ct_algo_theme', html.classList.contains('dark') ? 'dark' : 'light');
+        }
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        document.getElementById('themeToggleMobile').addEventListener('click', toggleTheme);
+        
+        if (localStorage.getItem('ct_algo_theme') === 'dark' || (!('ct_algo_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        function toggleAccordion(btn) {
+            const item = btn.parentElement;
+            item.classList.toggle('active');
+        }
+
+        // ==========================================
+        // 3. INTEGRASI SCORM 1.2 WRAPPER
+        // ==========================================
+        let scormAPI = null;
+        let isScormConnected = false;
+
+        function findScormAPI(win) {
+            let attempts = 0;
+            while ((win.API == null) && (win.parent != null) && (win.parent != win)) {
+                attempts++;
+                if (attempts > 7) return null;
+                win = win.parent;
+            }
+            return win.API;
+        }
+
+        function initSCORM() {
+            scormAPI = findScormAPI(window) || findScormAPI(window.top);
+            const statusEl = document.getElementById('scorm-status');
+            
+            if (scormAPI) {
+                const initResult = scormAPI.LMSInitialize("");
+                if (initResult === "true" || initResult === true) {
+                    isScormConnected = true;
+                    statusEl.innerText = "Terhubung";
+                    statusEl.className = "text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded";
+                    
+                    let studentName = scormAPI.LMSGetValue("cmi.core.student_name");
+                    if (studentName && studentName !== "undefined") {
+                        // SCORM format is usually "Lastname, Firstname"
+                        let formattedName = studentName.includes(',') ? studentName.split(',')[1].trim() : studentName;
+                        document.getElementById('student-name').innerText = formattedName;
+                    }
+                    
+                    let status = scormAPI.LMSGetValue("cmi.core.lesson_status");
+                    if (status === "not attempted" || status === "unknown" || status === "") {
+                        scormAPI.LMSSetValue("cmi.core.lesson_status", "incomplete");
+                        scormAPI.LMSCommit("");
+                    }
+                } else {
+                    statusEl.innerText = "Gagal (Init)";
+                    statusEl.className = "text-[10px] font-bold text-red-500 bg-red-100 dark:bg-red-900/40 px-2 py-0.5 rounded";
+                }
+            } else {
+                statusEl.innerText = "Bukan LMS (Offline)";
+                statusEl.className = "text-[10px] font-bold text-slate-500 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded";
+            }
+        }
+
+        function finishSCORM() {
+            if (isScormConnected && scormAPI) {
+                scormAPI.LMSCommit("");
+                scormAPI.LMSFinish("");
+            }
+        }
+
+        // ==========================================
+        // 4. LOGIKA STUDI KASUS (TAB 3)
+        // ==========================================
+        function answerCase(step, isCorrect, btn) {
+            const siblings = btn.parentElement.children;
+            for(let s of siblings) {
+                s.classList.remove('bg-red-50', 'border-red-500', 'bg-emerald-50', 'border-emerald-500', 'dark:bg-red-900/30', 'dark:bg-emerald-900/30');
+                const pSpan = s.querySelector('span');
+                pSpan.classList.remove('text-red-500', 'text-emerald-500');
+            }
+
+            const fb = document.getElementById(`feedback-${step}`);
+            fb.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'bg-red-100', 'text-red-800', 'dark:bg-emerald-900/50', 'dark:text-emerald-300', 'dark:bg-red-900/50', 'dark:text-red-300', 'border-emerald-200', 'border-red-200', 'dark:border-emerald-800', 'dark:border-red-800');
+            
+            const btnSpan = btn.querySelector('span');
+
+            if(isCorrect) {
+                btn.classList.add('bg-emerald-50', 'border-emerald-500', 'dark:bg-emerald-900/30');
+                btnSpan.classList.add('text-emerald-600', 'dark:text-emerald-400');
+                fb.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'dark:bg-emerald-900/30', 'dark:text-emerald-300', 'dark:border-emerald-800');
+                
+                if(step === 1) {
+                    fb.innerHTML = '<strong><i data-lucide="check-circle" class="w-4 h-4 inline mb-1"></i> Keputusan Tepat!</strong> Mengurutkan buku (Sorting) di awal memudahkan dan mempercepat pencarian data selanjutnya dalam jumlah besar (10.000 buku).';
+                    const s2 = document.getElementById('step-2');
+                    s2.classList.remove('hidden');
+                    setTimeout(() => s2.classList.remove('opacity-0'), 50);
+                } else {
+                    fb.innerHTML = '<strong><i data-lucide="check-circle" class="w-4 h-4 inline mb-1"></i> Tepat Sekali!</strong> Ini adalah inti dari <strong>Binary Search</strong>. Dengan membelah data menjadi dua setiap kalinya, pencarian dari 10.000 buku maksimal hanya butuh sekitar 14 kali tebakan!';
+                }
+            } else {
+                btn.classList.add('bg-red-50', 'border-red-500', 'dark:bg-red-900/30');
+                btnSpan.classList.add('text-red-500');
+                fb.classList.add('bg-red-50', 'text-red-800', 'border-red-200', 'dark:bg-red-900/30', 'dark:text-red-300', 'dark:border-red-800');
+                fb.innerHTML = '<strong><i data-lucide="x-circle" class="w-4 h-4 inline mb-1"></i> Kurang Tepat.</strong> Bayangkan mencari satu per satu (Linear) dari 10.000 buku, Anda akan kehabisan waktu! Coba pikirkan efisiensi algoritma.';
+            }
+            fb.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // 5. SIMULASI LABORATORIUM BUBBLE SORT (TAB 4)
+        // ==========================================
+        let dataArray = [];
+        const ARRAY_SIZE = 8;
+        let sortGenerator = null;
+        let isAutoPlaying = false;
+        let autoPlayTimer = null;
+
+        function logSort(msg, type="info") {
+            const logBox = document.getElementById('sort-log');
+            const el = document.createElement('div');
+            el.className = type === "swap" ? "text-red-400" : (type === "compare" ? "text-amber-400" : (type === "success" ? "text-emerald-400 font-bold" : "text-slate-300"));
+            el.innerText = `> ${msg}`;
+            logBox.appendChild(el);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function renderBars() {
+            const container = document.getElementById('sort-container');
+            container.innerHTML = '';
+            
+            // max value to normalize height
+            const maxVal = Math.max(...dataArray);
+            
+            dataArray.forEach((val, idx) => {
+                const bar = document.createElement('div');
+                bar.className = 'data-bar';
+                bar.id = `bar-${idx}`;
+                // height mapping (min 20px, max 180px)
+                const height = Math.max(30, (val / maxVal) * 160);
+                bar.style.height = `${height}px`;
+                bar.innerText = val;
+                container.appendChild(bar);
+            });
+        }
+
+        function generateDataArray() {
+            if(isAutoPlaying) toggleAutoPlay(false);
+            dataArray = [];
+            for(let i=0; i<ARRAY_SIZE; i++) {
+                dataArray.push(Math.floor(Math.random() * 90) + 10); // 10 to 99
+            }
+            renderBars();
+            sortGenerator = bubbleSortStepByStep();
+            
+            document.getElementById('sort-log').innerHTML = '<div class="text-slate-400 mb-1 border-b border-slate-800 pb-1">> SERVER_LOG: RESET DATA ARRAY</div>';
+            logSort(`Data Mentah: [${dataArray.join(', ')}]`);
+        }
+
+        // Generator function to yield each step of bubble sort
+        function* bubbleSortStepByStep() {
+            let n = dataArray.length;
+            let swapped;
+            for (let i = 0; i < n - 1; i++) {
+                swapped = false;
+                for (let j = 0; j < n - i - 1; j++) {
+                    // Visual State: Comparing
+                    yield { type: 'compare', indices: [j, j+1] };
+                    
+                    if (dataArray[j] > dataArray[j + 1]) {
+                        // Swap data
+                        let temp = dataArray[j];
+                        dataArray[j] = dataArray[j + 1];
+                        dataArray[j + 1] = temp;
+                        swapped = true;
+                        
+                        // Visual State: Swapping
+                        yield { type: 'swap', indices: [j, j+1] };
+                    }
+                }
+                // visual state: sorted last element
+                yield { type: 'sorted', index: n - i - 1 };
+                if (!swapped) break; // Optimization
+            }
+            // Mark all remaining as sorted
+            for(let k=0; k<dataArray.length; k++){
+                yield { type: 'sorted', index: k };
+            }
+            yield { type: 'done' };
+        }
+
+        function updateVisuals(state) {
+            // Reset colors
+            document.querySelectorAll('.data-bar').forEach(b => {
+                b.classList.remove('comparing', 'swapping');
+            });
+
+            if(!state) return;
+
+            if (state.type === 'compare') {
+                const b1 = document.getElementById(`bar-${state.indices[0]}`);
+                const b2 = document.getElementById(`bar-${state.indices[1]}`);
+                if(b1 && b2) {
+                    b1.classList.add('comparing');
+                    b2.classList.add('comparing');
+                    logSort(`Bandingkan: ${dataArray[state.indices[0]]} > ${dataArray[state.indices[1]]}?`, 'compare');
+                }
+            } 
+            else if (state.type === 'swap') {
+                renderBars(); // re-render to reflect new heights/values in array
+                const b1 = document.getElementById(`bar-${state.indices[0]}`);
+                const b2 = document.getElementById(`bar-${state.indices[1]}`);
+                if(b1 && b2) {
+                    b1.classList.add('swapping');
+                    b2.classList.add('swapping');
+                    logSort(`-- Tukar Posisi --`, 'swap');
+                }
+            }
+            else if (state.type === 'sorted') {
+                const b = document.getElementById(`bar-${state.index}`);
+                if(b && !b.classList.contains('sorted')) {
+                    b.classList.add('sorted');
+                    logSort(`Elemen pada indeks ${state.index} telah terurut.`);
+                }
+            }
+            else if (state.type === 'done') {
+                document.querySelectorAll('.data-bar').forEach(b => b.classList.add('sorted'));
+                logSort('BERHASIL: Algoritma Sorting Selesai!', 'success');
+                if(isAutoPlaying) toggleAutoPlay(false);
+            }
+        }
+
+        function stepSort() {
+            if(!sortGenerator) generateDataArray();
+            const step = sortGenerator.next();
+            if(!step.done) {
+                updateVisuals(step.value);
+            } else {
+                updateVisuals({type: 'done'});
+            }
+        }
+
+        function toggleAutoPlay(forceStop = false) {
+            const btnPlay = document.getElementById('btn-play');
+            const btnStep = document.getElementById('btn-step');
+            
+            if(isAutoPlaying || forceStop) {
+                isAutoPlaying = false;
+                clearInterval(autoPlayTimer);
+                btnPlay.innerHTML = '<i data-lucide="play" class="w-4 h-4"></i> Auto Jalankan';
+                btnPlay.classList.replace('bg-rose-500', 'bg-primary');
+                btnPlay.classList.replace('hover:bg-rose-600', 'hover:bg-indigo-600');
+                btnStep.disabled = false;
+                btnStep.classList.remove('opacity-50');
+            } else {
+                if(!sortGenerator) generateDataArray();
+                isAutoPlaying = true;
+                btnPlay.innerHTML = '<i data-lucide="square" class="w-4 h-4"></i> Hentikan';
+                btnPlay.classList.replace('bg-primary', 'bg-rose-500');
+                btnPlay.classList.replace('hover:bg-indigo-600', 'hover:bg-rose-600');
+                btnStep.disabled = true;
+                btnStep.classList.add('opacity-50');
+                
+                autoPlayTimer = setInterval(() => {
+                    const step = sortGenerator.next();
+                    if(!step.done) {
+                        updateVisuals(step.value);
+                    } else {
+                        updateVisuals({type: 'done'});
+                        toggleAutoPlay(true);
+                    }
+                }, 400); // speed of auto
+            }
+            lucide.createIcons();
+        }
+        
+        function playAutoSort() { toggleAutoPlay(); }
+
+        // ==========================================
+        // 6. MINI GAME PENCOCOKAN (TAB 5)
+        // ==========================================
+        let selectedLeftBtn = null;
+        let matchedPairs = 0;
+        // Kunci: L1(Binary) -> R1(Bagi dua), L2(Bubble) -> R2(Tukar dekat), L3(Linear) -> R3(Awal-akhir)
+        const correctMatches = { 'L1': 'R1', 'L2': 'R2', 'L3': 'R3' };
+
+        document.querySelectorAll('.match-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetBtn = e.currentTarget; // use currentTarget for complex innerHTML buttons
+                const id = targetBtn.dataset.id;
+                const dot = targetBtn.querySelector('.dot-indicator');
+                
+                if(id.startsWith('L')) {
+                    if(targetBtn.disabled) return;
+                    // Reset others
+                    document.querySelectorAll('#match-left .match-btn:not(:disabled)').forEach(el => {
+                        el.classList.remove('border-primary', 'bg-indigo-50', 'dark:bg-indigo-900/50');
+                        el.querySelector('.dot-indicator').classList.remove('bg-primary');
+                    });
+                    
+                    targetBtn.classList.add('border-primary', 'bg-indigo-50', 'dark:bg-indigo-900/50');
+                    dot.classList.add('bg-primary');
+                    selectedLeftBtn = id;
+                } 
+                else if (id.startsWith('R') && selectedLeftBtn) {
+                    if(targetBtn.disabled) return;
+                    
+                    if(correctMatches[selectedLeftBtn] === id) {
+                        // BENAR
+                        targetBtn.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-700', 'dark:bg-emerald-900/40', 'dark:text-emerald-300', 'dark:border-emerald-500');
+                        dot.classList.replace('bg-slate-300', 'bg-emerald-500');
+                        dot.classList.replace('dark:bg-slate-600', 'bg-emerald-500');
+                        targetBtn.disabled = true;
+                        
+                        const lBtn = document.querySelector(`[data-id="${selectedLeftBtn}"]`);
+                        lBtn.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-700', 'dark:bg-emerald-900/40', 'dark:text-emerald-300', 'dark:border-emerald-500');
+                        lBtn.classList.remove('border-primary', 'bg-indigo-50', 'dark:bg-indigo-900/50');
+                        const lDot = lBtn.querySelector('.dot-indicator');
+                        lDot.classList.replace('bg-primary', 'bg-emerald-500');
+                        lBtn.disabled = true;
+                        
+                        matchedPairs++;
+                        selectedLeftBtn = null;
+                        
+                        if(matchedPairs === 3) {
+                            const fb = document.getElementById('match-feedback');
+                            fb.innerHTML = "<i data-lucide='award' class='w-6 h-6 inline mb-1'></i> Luar Biasa! Anda menguasai konsep dasar algoritma pemrosesan data.";
+                            fb.className = "mt-8 p-4 text-center text-sm font-bold rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 block animate-pulse";
+                            lucide.createIcons();
+                        }
+                    } else {
+                        // SALAH
+                        targetBtn.classList.add('bg-red-50', 'border-red-500', 'dark:bg-red-900/40');
+                        setTimeout(() => targetBtn.classList.remove('bg-red-50', 'border-red-500', 'dark:bg-red-900/40'), 600);
+                    }
+                }
+            });
+        });
+
+        function resetMatchGame() {
+            matchedPairs = 0;
+            selectedLeftBtn = null;
+            document.querySelectorAll('.match-btn').forEach(el => {
+                el.disabled = false;
+                el.className = "match-btn flex items-center justify-between w-full p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-300 dark:border-slate-600 rounded-xl text-left text-sm font-semibold hover:border-primary transition";
+                const dot = el.querySelector('.dot-indicator');
+                dot.className = "w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600 dot-indicator";
+            });
+            document.getElementById('match-feedback').classList.add('hidden');
+        }
+
+        // ==========================================
+        // 7. EVALUASI AKHIR (SCORM) (TAB 6)
+        // ==========================================
+        function submitQuiz(e) {
+            e.preventDefault();
+            const form = document.getElementById('quizForm');
+            const data = new FormData(form);
+            let score = 0;
+            
+            // Kunci Jawaban: 1B, 2C, 3A, 4B, 5A, 6B, 7A, 8B, 9A, 10C
+            if(data.get('q1') === 'B') score += 10;
+            if(data.get('q2') === 'C') score += 10;
+            if(data.get('q3') === 'A') score += 10;
+            if(data.get('q4') === 'B') score += 10;
+            if(data.get('q5') === 'A') score += 10;
+            if(data.get('q6') === 'B') score += 10;
+            if(data.get('q7') === 'A') score += 10;
+            if(data.get('q8') === 'B') score += 10;
+            if(data.get('q9') === 'A') score += 10;
+            if(data.get('q10') === 'C') score += 10;
+            
+            const resEl = document.getElementById('quizResult');
+            resEl.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'bg-red-50', 'text-red-800', 'dark:bg-emerald-900/30', 'dark:bg-red-900/30', 'border-emerald-200', 'border-red-200');
+            
+            const passed = score >= 75;
+            if(passed) {
+                resEl.classList.add('bg-emerald-50', 'text-emerald-800', 'dark:bg-emerald-900/50', 'dark:text-emerald-300', 'border-emerald-200', 'dark:border-emerald-700');
+                resEl.innerHTML = `<div class="text-3xl mb-2">🎉</div> LULUS! Skor Anda: <strong>${score}/100</strong>`;
+            } else {
+                resEl.classList.add('bg-red-50', 'text-red-800', 'dark:bg-red-900/50', 'dark:text-red-300', 'border-red-200', 'dark:border-red-700');
+                resEl.innerHTML = `Belum Lulus. Skor Anda: <strong>${score}/100</strong>. KKM: 75. Silakan baca ulang materi.`;
+            }
+
+            const btn = document.getElementById('btnSubmitQuiz');
+            btn.disabled = true;
+            btn.innerHTML = 'Terkirim <i data-lucide="check" class="w-4 h-4"></i>';
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            lucide.createIcons();
+
+            // SCORM Report
+            if (isScormConnected && scormAPI) {
+                scormAPI.LMSSetValue("cmi.core.score.raw", score.toString());
+                scormAPI.LMSSetValue("cmi.core.score.min", "0");
+                scormAPI.LMSSetValue("cmi.core.score.max", "100");
+                scormAPI.LMSSetValue("cmi.core.lesson_status", passed ? "passed" : "failed");
+                scormAPI.LMSCommit("");
+            }
+        }
+
+        // ==========================================
+        // 8. CATATAN & REFLEKSI (TAB 7)
+        // ==========================================
+        function saveNotes() {
+            const notes = document.getElementById('student-notes').value;
+            localStorage.setItem('ct_algo_notes', notes);
+            
+            for(let i=1; i<=2; i++) {
+                localStorage.setItem(`ct_algo_ref${i}`, document.getElementById(`ref${i}`).checked);
+            }
+
+            const msg = document.getElementById('save-msg');
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 3000);
+        }
+
+        function loadNotes() {
+            if(localStorage.getItem('ct_algo_notes')) {
+                document.getElementById('student-notes').value = localStorage.getItem('ct_algo_notes');
+            }
+            for(let i=1; i<=2; i++) {
+                if(localStorage.getItem(`ct_algo_ref${i}`) === 'true') {
+                    document.getElementById(`ref${i}`).checked = true;
+                }
+            }
+        }
+
+        // INIT ALL ON LOAD
+        window.addEventListener('load', () => { 
+            initNav(); 
+            initSCORM(); 
+            generateDataArray(); // Init sim lab
+            loadNotes(); 
+        });
+        
+        // SCORM FINISH ON UNLOAD
+        window.addEventListener('unload', finishSCORM);
+        window.addEventListener('beforeunload', finishSCORM);
+
+    </script>
+</body>
+</html>
